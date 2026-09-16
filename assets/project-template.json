@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "project_id": "example-project",
+  "purpose": "Replace with the scientific docking question",
+  "tools": {"vina": "vina", "python": "python", "prepare_receptor": "mk_prepare_receptor", "prepare_ligand": "mk_prepare_ligand"},
+  "conditions": {"ph": null, "ph_basis": "Specify assay conditions or an explicit assumption"},
+  "ligand_manifest": "manifests/ligands.csv",
+  "receptors": [
+    {
+      "id": "target-model-state",
+      "target": "Specify gene/protein and species",
+      "source_id": null,
+      "raw_structure": "raw/receptor.cif",
+      "chains": [],
+      "construct_and_mutations": "Review sequence and structure metadata",
+      "prepared_pdbqt": "prepared/receptor.pdbqt",
+      "preparation_record": "manifests/receptor-preparation.json",
+      "pocket_basis": "Specify co-crystal, established site or exploratory site evidence",
+      "reference": {"applicable": true, "chain": null, "resname": null, "resnum": null, "insertion_code": "", "altloc": null, "unchanged_sdf": "reference/crystal.sdf", "docking_pdbqt": "reference/input.pdbqt", "atom_map": "reference/atom-map.json"},
+      "box": {"center": [null, null, null], "size_angstrom": [null, null, null], "coverage_record": "manifests/grid-coverage.json"},
+      "validation": {"status": "not_run", "seeds": [1, 42, 777], "top1_rmsd_limit_angstrom": 2.0, "required_pass_fraction": 1.0, "geometry_review": "pending", "evidence": []},
+      "production_eligible": false
+    }
+  ],
+  "search": {"scorings": ["vina"], "exhaustiveness": 16, "num_modes": 9, "energy_range": 3, "seed": 42, "cpu_per_worker": 1, "workers": 1},
+  "run_root": "runs/run-001",
+  "notes": "Example values are not validated scientific parameters. Null fields must be resolved. No workflow should launch directly from this unreviewed template."
+}

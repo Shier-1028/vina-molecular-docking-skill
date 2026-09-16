@@ -1,0 +1,4 @@
+interface:
+  display_name: "AutoDock Vina Molecular Docking"
+  short_description: "Environment setup, validated batch docking and reporting"
+  default_prompt: "Use $vina-molecular-docking to check my dependencies and software paths, then prepare, validate and run my requested docking workflow."
