@@ -3,17 +3,14 @@ name: vina-molecular-docking
 description: Prepare, validate, run, resume, and audit AutoDock Vina molecular docking on Windows, including multi-receptor batches, co-crystal redocking, macrocycles, scoring comparisons, and traceable reports.
 ---
 
-# AutoDock Vina Molecular Docking
+# AutoDock Vina 1.2.7 Molecular Docking
 
-Use native Vina commands for docking, not a per-ligand PowerShell launcher.
-Before first use on a new machine, read [first-use.md](references/first-use.md).
-Explain task-specific dependencies, ask for software paths or permission to scan
-selected installation folders, and perform capability checks in the chosen Python
-environment. A skill installation has no guaranteed automatic setup hook: show
-the reminder when first invoked. Never assume a drive, installation directory or
-that software is bundled. Preserve established local configuration on later runs.
-For deployment limits and troubleshooting handoff, read
-[distribution-review.md](references/distribution-review.md).
+Use Vina's native batch interface or another equivalent auditable batch runner.
+Scoring-function comparison is supported but optional; do not run extra scorers
+unless the user requests or approves the comparison.
+Local executables are `D:\autodockvina\vina.exe`, `D:\Anaconda\python.exe`, and
+`D:\Anaconda\Scripts\mk_prepare_{receptor,ligand}.exe`. Verify paths before use;
+these are configurable local locations, not portable installation requirements.
 
 ## Workflow
 
@@ -22,9 +19,8 @@ For a new project or a reusable handoff, start with
 asset. It defines manifests, stage deliverables and failure branches for arbitrary
 targets and libraries. Existing project layouts can be retained.
 
-1. Verify Vina version and help using `scripts/check_environment.py` or its
-   PowerShell wrapper; choose dock/prepare/validate/repair profiles as needed.
-   Check capabilities, not an exact version alone; missing required features fail.
+1. Verify Vina version and help. The optional `scripts/check_vina_env.ps1` checks
+   Vina, Python, and Meeko; missing or unlaunchable required tools must fail.
    PyMOL is optional. Already prepared PDBQT inputs need no Meeko execution.
 2. Record ligand identity/source/stereochemistry, receptor PDB/chain, pocket
    evidence, and observed versus expected chain residues. Review missing pocket
@@ -34,26 +30,30 @@ targets and libraries. Existing project layouts can be retained.
    preparation section in [workflow.md](references/workflow.md) and
    [preparation-and-validation.md](references/preparation-and-validation.md)
    before preparing structures or evaluating a redocking failure.
-4. Use a shared numeric box/search config with no `receptor`, `ligand`, `maps`,
+4. Classify each receptor as `formal`, `exploratory`, `N/A`, or `void`. Use a shared numeric box/search config with no `receptor`, `ligand`, `maps`,
    `scoring`, `out`, or `dir` entries. Group batches by receptor and box.
    Vina box sizes are lengths in Angstrom, not AutoGrid point counts.
-   Before production batching, validate each receptor/scorer/preparation/final-box
-   combination by applicable global co-crystal redocking. Record top-1 symmetry-
-   corrected heavy-atom RMSD in the receptor frame, without ligand fitting.
-   A common predeclared criterion is <=2 A across three seeds; report mixed
-   outcomes as unstable, not universally passed. This is a reference criterion,
-   not proof of biological activity. If validation fails, block validated
-   production; explicitly scoped exploratory work stays separately labeled.
-5. Run `--receptor ... --config conf.txt --batch <sorted ligand paths> --dir results/vina
+   For a `formal` receptor with an applicable co-crystal small molecule, perform
+   the predeclared global co-crystal redocking validation. A receptor without an
+   applicable co-crystal ligand is `N/A` for co-crystal redocking, not a failed
+   validation; it may still support explicitly labeled exploratory docking when a
+   site is supported by literature or documented pocket analysis. Record top-1
+   symmetry-corrected heavy-atom RMSD in the receptor frame, without ligand
+   fitting. A common predeclared criterion is <=2 A across three seeds, but the
+   threshold, seed count, and top-1/best-mode rule are project choices. A failed
+   validation blocks the validation claim, not explicitly requested exploratory
+   docking.
+5. Run `--receptor ... --config conf.txt --batch ligands --dir results/vina
    --scoring vina`. Vina 1.2.7 accepts a directory of lowercase `.pdbqt` files.
    Each scoring run loads the receptor/maps once and processes ligands in batch.
-   Prefer explicit sorted files across versions; verify directory mode before use.
    Use a fresh output directory for every run; pre-create it before invocation.
-6. For scoring comparison, repeat with `vinardo`. For `ad4`, use `--maps prefix`
+6. Offer the user an optional scoring-function comparison. If requested, repeat
+   with `vinardo`. For `ad4`, use `--maps prefix`
    in place of `--receptor`. AD4 requires AutoGrid4 maps from the same prepared
    receptor and matched box, covering all ligand atom types. Read the AD4 branch
    in [workflow.md](references/workflow.md) before running it. Missing maps mean
-   AD4 is not run, not that vina/vinardo failed.
+   AD4 is unavailable, not that vina or vinardo failed. Keep each scorer's run,
+   ranking, and interpretation separate.
 7. Save stdout/stderr by shell redirection (1.2.7 has no `--log`). Check exit codes
    AND expected ligand outputs: Vina may skip malformed ligands with exit code 0.
    Preserve original multi-model `<ligand>_out.pdbqt` files.
@@ -70,6 +70,17 @@ targets and libraries. Existing project layouts can be retained.
    rows. Make pocket and overview images; use single extracted poses, never all
    modes merged together. Label geometric polar distances as potential contacts,
    not proven hydrogen bonds. Use [report-template.md](references/report-template.md).
+
+## Protection and provenance
+
+- Grid generation, figure generation, and batch execution are read-only with
+  respect to prepared receptor PDBQT files. They must not silently rerun receptor
+  preparation or overwrite a validated receptor.
+- Register and verify receptor SHA256 before batch execution. A mismatch aborts
+  the run before any output is modified.
+- Keep `formal`, `exploratory`, `N/A`, and `void` outputs separate in summaries,
+  plots, and conclusions. A void result is retained for provenance but excluded
+  from formal rankings.
 
 ## Interpretation
 
@@ -88,6 +99,11 @@ targets and libraries. Existing project layouts can be retained.
 - `--local_only` near a crystal pose and `--score_only` are diagnostic evidence,
   not substitutes for successful global redocking. A worse crystal score does
   not isolate scoring bias from receptor/state/preparation/sampling errors.
-- Read [case-lessons.md](references/case-lessons.md) for general troubleshooting
-  checks and common interpretation errors.
+- To reproduce an original docking score with `--score_only`, pass the original
+  run's recorded `REMARK UNBOUND` value as `--unbound_energy`. Default
+  `score_only` may recalculate the unbound reference and must not be mixed with
+  original scores without documenting the difference.
+- Read [case-lessons.md](references/case-lessons.md) when applying lessons from
+  the supplied DSH session. Its historical commands are examples to assess,
+  not authorization to launch, stop, delete, or overwrite current jobs.
 
